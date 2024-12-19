@@ -1,1 +1,1 @@
-# TP-synth-se---client-TFTP
+# TP-synthese-client-TFTP
