@@ -8,6 +8,7 @@
 #define SERVER_PORT 1069
 
 int main(int argc, char** argv) {
+    //verifier le nombre d'arguments pour éviter les comportements indésirables comme des erreurs de segmentation
     if (argc != 3) {
         printf("Invalid number of arguments: expected 3, received %d\n", argc);
         exit(EXIT_FAILURE);
@@ -23,13 +24,16 @@ int main(int argc, char** argv) {
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;      
     hints.ai_protocol = IPPROTO_UDP; 
+    hints.ai_socktype = SOCK_DGRAM;
 
     int status = getaddrinfo(host, NULL, &hints, &res);
+    //vérifie que getaddrinfo n'echoue pas sinon le probleme se repercutera plus tard aec le socket par exemple
     if (status != 0) {
         printf("Unable to reach host: %s\n", host);
         exit(EXIT_FAILURE);
     }
 
+    //configuration pour communiquer avec le bon serveur
     struct sockaddr_in serverAddr;
     serverAddr.sin_family = res->ai_family;
     serverAddr.sin_port = htons(SERVER_PORT);
@@ -50,6 +54,6 @@ int main(int argc, char** argv) {
     freeaddrinfo(res);
 
     close(sfd);
-    
+
     return 0;
 }
