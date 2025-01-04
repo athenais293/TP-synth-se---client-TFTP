@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <netdb.h>
+#include <arpa/inet.h> 
+#include <unistd.h>
+
+#define SERVER_PORT 1069
 
 int main(int argc, char** argv) {
     if (argc != 3) {
@@ -26,9 +30,26 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
+    struct sockaddr_in serverAddr;
+    serverAddr.sin_family = res->ai_family;
+    serverAddr.sin_port = htons(SERVER_PORT);
+
+    if (inet_pton(AF_INET, host, &serverAddr.sin_addr.s_addr) <= 0) {
+        printf("Invalid IP address: %s\n", host);
+        exit(EXIT_FAILURE);
+    }
+
     printf("Address resolution successful for host: %s\n", host);
+
+    int sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (sfd == -1) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
 
     freeaddrinfo(res);
 
+    close(sfd);
+    
     return 0;
 }
