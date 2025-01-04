@@ -6,9 +6,11 @@
 #include <unistd.h>
 
 #define SERVER_PORT 1069
+#define TFTP_RRQ 1 
+#define BUFFER_SIZE 512
 
 int main(int argc, char** argv) {
-    //verifier le nombre d'arguments pour éviter les comportements indésirables comme des erreurs de segmentation
+    //check the number of arguments to avoid undesirable behaviors such as segmentation faults
     if (argc != 3) {
         printf("Invalid number of arguments: expected 3, received %d\n", argc);
         exit(EXIT_FAILURE);
@@ -27,13 +29,13 @@ int main(int argc, char** argv) {
     hints.ai_socktype = SOCK_DGRAM;
 
     int status = getaddrinfo(host, NULL, &hints, &res);
-    //vérifie que getaddrinfo n'echoue pas sinon le probleme se repercutera plus tard aec le socket par exemple
+    //ensure getaddrinfo succeeds, or it will affect socket creation later
     if (status != 0) {
         printf("Unable to reach host: %s\n", host);
         exit(EXIT_FAILURE);
     }
 
-    //configuration pour communiquer avec le bon serveur
+    //configure the correct server
     struct sockaddr_in serverAddr;
     serverAddr.sin_family = res->ai_family;
     serverAddr.sin_port = htons(SERVER_PORT);
@@ -52,6 +54,23 @@ int main(int argc, char** argv) {
     }
 
     freeaddrinfo(res);
+
+    //RRQ message
+    char buffer[BUFFER_SIZE];
+    int rrq_len = 2 + strlen(file) + 1 + strlen("octet") + 1;
+    memset(buffer, 0, BUFFER_SIZE);
+    buffer[0] = 0; 
+    buffer[1] = TFTP_RRQ;  
+    strcpy(&buffer[2], file); 
+    strcpy(&buffer[2 + strlen(file) + 1], "octet");  
+
+    if (sendto(sfd, buffer, rrq_len, 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
+        perror("Failed to send RRQ");
+        close(sfd);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("RRQ sent to server for file: %s\n", file);
 
     close(sfd);
 
