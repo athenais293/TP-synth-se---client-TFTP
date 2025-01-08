@@ -7,72 +7,71 @@
 
 #define SERVER_PORT 1069
 #define TFTP_RRQ 1 
-#define BUFFER_SIZE 512
+#define BUFFER_SIZE 516
 
 int main(int argc, char** argv) {
+     printf("TFTP Client \n");
+
     //check the number of arguments to avoid undesirable behaviors such as segmentation faults
-    if (argc != 3) {
-        printf("Invalid number of arguments: expected 3, received %d\n", argc);
+    if (argc != 4) {
+        printf("Wrong command \n");
         exit(EXIT_FAILURE);
     }
 
-    char* host = argv[1];
-    char* file = argv[2];
-
-    printf("Server: %s\n", host);
-    printf("File: %s\n", file);
-
-    struct addrinfo hints, *res;
+    struct addrinfo hints, *result;
     memset(&hints, 0, sizeof(hints));
+
     hints.ai_family = AF_INET;      
     hints.ai_protocol = IPPROTO_UDP; 
     hints.ai_socktype = SOCK_DGRAM;
 
-    int status = getaddrinfo(host, NULL, &hints, &res);
+    int status = getaddrinfo(argv[1], argv[2], &hints, &result);
+
+    char ip_string[128] = {0};
+    char port_string[128] = {0};
+
+    //convert the address to a human-readable form
+    getnameinfo(result->ai_addr, result->ai_addrlen,
+                ip_string, 128, port_string, 128,
+                NI_NUMERICHOST | NI_NUMERICSERV);
+
+    printf("%s is resolved at : %s:%s\n", argv[1], ip_string, port_string);
+
+    
     //ensure getaddrinfo succeeds, or it will affect socket creation later
     if (status != 0) {
-        printf("Unable to reach host: %s\n", host);
+        printf("Unable to reach host: %s\n", argv[1]);
         exit(EXIT_FAILURE);
     }
 
-    //configure the correct server
-    struct sockaddr_in serverAddr;
-    serverAddr.sin_family = res->ai_family;
-    serverAddr.sin_port = htons(SERVER_PORT);
-
-    if (inet_pton(AF_INET, host, &serverAddr.sin_addr.s_addr) <= 0) {
-        printf("Invalid IP address: %s\n", host);
-        exit(EXIT_FAILURE);
-    }
-
-    printf("Address resolution successful for host: %s\n", host);
-
-    int sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (sfd == -1) {
+     //create a socket for communication
+    int sd = socket(result->ai_family, result->ai_socktype,
+                    result->ai_protocol);
+    if (sd == -1) {
         perror("Socket creation failed");
+        freeaddrinfo(result);
         exit(EXIT_FAILURE);
     }
-
-    freeaddrinfo(res);
 
     //RRQ message
-    char buffer[BUFFER_SIZE];
-    int rrq_len = 2 + strlen(file) + 1 + strlen("octet") + 1;
-    memset(buffer, 0, BUFFER_SIZE);
-    buffer[0] = 0; 
-    buffer[1] = TFTP_RRQ;  
-    strcpy(&buffer[2], file); 
-    strcpy(&buffer[2 + strlen(file) + 1], "octet");  
+    char rrq[BUFFER_SIZE] = {0};
+    rrq[1] = TFTP_RRQ; 
+    sprintf(rrq + 2, "%s", argv[3]);  
+    sprintf(rrq + 3 + strlen(argv[3]), "octet"); 
 
-    if (sendto(sfd, buffer, rrq_len, 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
+     //send the RRQ message to the server
+    if (sendto(sd, rrq, strlen(argv[3]) + 9, 0,
+               result->ai_addr, result->ai_addrlen) == -1) {
         perror("Failed to send RRQ");
-        close(sfd);
+        freeaddrinfo(result);
+        close(sd);
         exit(EXIT_FAILURE);
     }
 
-    printf("RRQ sent to server for file: %s\n", file);
+     printf("RRQ sent to server for file: %s\n", argv[3]);
 
-    close(sfd);
+    freeaddrinfo(result);
+    close(sd);
 
     return 0;
 }
