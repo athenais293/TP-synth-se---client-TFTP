@@ -8,6 +8,8 @@
 #define SERVER_PORT 1069
 #define TFTP_RRQ 1 
 #define BUFFER_SIZE 516
+#define TFTP_DAT 3
+#define TFTP_ACK 4
 
 int main(int argc, char** argv) {
      printf("TFTP Client \n");
@@ -68,7 +70,43 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
-     printf("RRQ sent to server for file: %s\n", argv[3]);
+    printf("RRQ sent to server for file: %s\n", argv[3]);
+
+    //receiving a data packet
+    char buffer[BUFFER_SIZE] = {0};
+    struct sockaddr_in server_addr;
+    socklen_t addr_len = sizeof(server_addr);
+    int received_len = recvfrom(sd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&server_addr, &addr_len);
+    if (received_len == -1) {
+        perror("Failed to receive DAT");
+        freeaddrinfo(result);
+        close(sd);
+        exit(EXIT_FAILURE);
+    }
+
+    if (buffer[1] != TFTP_DAT) {
+        printf("Error: Expected DAT packet, received type %d\n", buffer[1]);
+        freeaddrinfo(result);
+        close(sd);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Received DAT packet with block number %d\n", ntohs(*(unsigned short*)(buffer + 2)));
+    printf("Data: %s\n", buffer + 4);
+
+    //ACK
+    char ack[4] = {0};
+    ack[1] = TFTP_ACK; 
+    *(unsigned short*)(ack + 2) = *(unsigned short*)(buffer + 2); 
+
+    if (sendto(sd, ack, 4, 0, (struct sockaddr*)&server_addr, addr_len) == -1) {
+        perror("Failed to send ACK");
+        freeaddrinfo(result);
+        close(sd);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("ACK sent for block number %d\n", ntohs(*(unsigned short*)(buffer + 2)));
 
     freeaddrinfo(result);
     close(sd);
