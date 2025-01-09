@@ -1,10 +1,9 @@
 # TP synthese-TFTP client
 
-The aim of this tutorial is to create a client program capable of exchanging files using the
-TFTP (Trivial File Transfer Protocol).
+##The aim of this tutorial is to create a client program capable of exchanging files using the TFTP (Trivial File Transfer Protocol).
 
-When running the gettftp program, the client first resolves the server address using the getaddrinfo function. This step can be seen in the screenshot below, where the client queries the DNS server to obtain the IP address
-![Vérification Wireshark](verification wireshark.png)
+When running the gettftp program, the client first resolves the server address using the getaddrinfo function. This step can be seen in the screenshot below, where the client queries the DNS server to obtain the IP address :
+![Vérification Wireshark](verification wireshark.PNG)
 
 To do this, we first coded the RRQ request sent to the server. 
 Once this request has been sent, the server responds with data packets (DAT). 
