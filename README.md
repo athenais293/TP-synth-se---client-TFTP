@@ -4,7 +4,7 @@
 
 When running the gettftp program, the client first resolves the server address using the getaddrinfo function. This step can be seen in the screenshot below, where the client queries the DNS server to obtain the IP address :
 
-![Verification Wireshark](verification wireshark.PNG)
+![Verification Wireshark](verificationwireshark.PNG)
 
 To do this, we first coded the RRQ request sent to the server. 
 Once this request has been sent, the server responds with data packets (DAT). 
