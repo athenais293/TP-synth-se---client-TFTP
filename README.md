@@ -23,7 +23,7 @@ Once the server address has been obtained, the program sends a read request (RRQ
 
 By creating a TFTP client, I learned how to manage network connections and transfer files using the UDP and TFTP protocols.
 
-## Le but de ce tutoriel est de créer un programme client capable d'échanger des fichiers en utilisant le protocole TFTP (Trivial File Transfer Protocol).
+## Le but de ce TP est de créer un programme client capable d'échanger des fichiers en utilisant le protocole TFTP (Trivial File Transfer Protocol).
 
 Lors de l'exécution du programme gettftp, le client résout d'abord l'adresse du serveur à l'aide de la fonction getaddrinfo. Cette étape est illustrée dans la capture d'écran ci-dessous, où le client interroge le serveur DNS pour obtenir l'adresse IP :
 
